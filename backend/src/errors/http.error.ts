@@ -1,0 +1,42 @@
+export class HttpError extends Error {
+    public readonly statusCode: number;
+    public readonly title: string;
+
+    constructor(statusCode: number, title: string, message: string) {
+        super(message);
+        this.statusCode = statusCode;
+        this.title = title;
+        
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class NotFoundError extends HttpError {
+    constructor(message: string = 'Recurso no encontrado') {
+        super(404, 'No Encontrado', message);
+    }
+}
+
+export class BadRequestError extends HttpError {
+    constructor(message: string = 'Solicitud mal formada o inválida') {
+        super(400, 'Petición incorrecta', message);
+    }
+}
+
+export class ConflictError extends HttpError {
+    constructor(message: string = 'Existe un conflicto con el estado actual del recurso') {
+        super(409, 'Conflicto', message);
+    }
+}
+
+export class UnauthorizedError extends HttpError {
+    constructor(message: string = 'Credenciales inválidas') {
+        super(401, 'No Autorizado', message);
+    }
+}
+
+export class ForbiddenError extends HttpError {
+    constructor(message = 'No tienes permiso para acceder a este recurso.') {
+        super(403, 'Acceso Denegado', message);
+    }
+}
