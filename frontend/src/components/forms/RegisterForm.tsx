@@ -1,45 +1,84 @@
-import { useActionState } from 'react';
+import { useActionState, useRef } from 'react';
 import InputField from './input-fields/InputField';
 import SubmitButton from '../buttons/submit-button/SubmitButton';
 import { register } from '../../services/auth.service';
 import { ApiError } from '../../errors/apiError';
 import type { RegisterDto } from '../../interfaces/auth.type';
+import { validateRegisterForm, type ValidationErrors } from '../../utils/validations';
 
 interface FormState {
   message: string | null;
   type: 'success' | 'error' | null;
+  validationErrors: ValidationErrors;
+  formData: {
+    email: string;
+    username: string;
+    password: string;
+  };
 }
 
 const RegisterForm = () => {
-  const [state, formAction] = useActionState(registerAction, { message: null, type: null });
+  const formRef = useRef<HTMLFormElement>(null);
+  
+  const [state, formAction] = useActionState(registerAction, { 
+    message: null, 
+    type: null, 
+    validationErrors: {},
+    formData: { email: '', username: '', password: '' }
+  });
 
   async function registerAction(_previousState: FormState, formData: FormData): Promise<FormState> {
-    const registerData: RegisterDto = {
-      email: formData.get('email') as string,
-      username: formData.get('username') as string,
-      password: formData.get('password') as string,
-    };
+    const email = (formData.get('email') as string) || '';
+    const username = (formData.get('username') as string) || '';
+    const password = (formData.get('password') as string) || '';
     
-    if (registerData.password.length < 8) {
-        return { message: 'La contraseña debe tener al menos 8 caracteres.', type: 'error' };
+    // Guardar los datos del formulario para mantenerlos en caso de error
+    const currentFormData = { email, username, password };
+    
+    const validationErrors = validateRegisterForm(formData);
+    
+    if (Object.keys(validationErrors).length > 0) {
+      return {
+        message: null,
+        type: null,
+        validationErrors,
+        formData: currentFormData
+      };
     }
+
+    const registerData: RegisterDto = { email, username, password };
 
     try {
       await register(registerData);
       return { 
         message: '¡Cuenta creada exitosamente! Por favor, inicia sesión.',
-        type: 'success' 
+        type: 'success',
+        validationErrors: {},
+        formData: { email: '', username: '', password: '' }
       };
     } catch (err) {
+      // Mantener los datos del formulario en caso de error de API
       if (err instanceof ApiError) {
-        return { message: err.message, type: 'error' };
+        return { 
+          message: err.message, 
+          type: 'error', 
+          validationErrors: {},
+          formData: currentFormData
+        };
       }
-      return { message: 'Ocurrió un error inesperado.', type: 'error' };
+      return { 
+        message: 'Ocurrió un error inesperado.', 
+        type: 'error', 
+        validationErrors: {},
+        formData: currentFormData
+      };
     }
   }
 
+  const hasValidationErrors = Object.keys(state.validationErrors).length > 0;
+
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-6">
       <InputField
         labelContent="Correo electrónico"
         name="email"
@@ -49,6 +88,9 @@ const RegisterForm = () => {
         autoComplete="email"
         srOnly={true}
         required
+        defaultValue={state.formData.email}
+        error={state.validationErrors.email}
+        showError={hasValidationErrors}
       />
       <InputField
         labelContent="Nombre de usuario"
@@ -59,6 +101,9 @@ const RegisterForm = () => {
         autoComplete="username"
         srOnly={true}
         required
+        defaultValue={state.formData.username}
+        error={state.validationErrors.username}
+        showError={hasValidationErrors}
       />
       <InputField
         labelContent="Contraseña"
@@ -70,6 +115,9 @@ const RegisterForm = () => {
         srOnly={true}
         required
         isPassword={true}
+        defaultValue={state.formData.password}
+        error={state.validationErrors.password}
+        showError={hasValidationErrors}
       />
       
       {state.message && (
@@ -78,7 +126,7 @@ const RegisterForm = () => {
         </p>
       )}
 
-      <SubmitButton>Crear Cuenta</SubmitButton>
+      <SubmitButton loadingText="Creando cuenta...">Crear Cuenta</SubmitButton>
     </form>
   );
 };

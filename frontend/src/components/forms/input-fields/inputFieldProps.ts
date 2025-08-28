@@ -2,4 +2,6 @@ export interface InputFieldProps extends React.InputHTMLAttributes<HTMLInputElem
     labelContent: string;
     srOnly?: boolean;
     isPassword?: boolean;
+    error?: string;
+    showError?: boolean;
 }
