@@ -19,7 +19,7 @@ const InputField = ({
 
     return (
         <div className="relative">
-            <label htmlFor={id} className={srOnly ? 'sr-only' : ''}>
+            <label htmlFor={id} className={srOnly ? 'sr-only' : 'block text-sm font-medium text-fg mb-2'}>
                 {labelContent}
             </label>
             <div className="relative">

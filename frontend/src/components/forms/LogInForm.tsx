@@ -52,7 +52,6 @@ const LogInForm = () => {
 
     try {
       const response = await login(loginData);
-      console.log('Inicio de sesión exitoso:', response);
 
       authLogin(response.token);
       
